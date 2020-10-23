@@ -23,6 +23,7 @@
 import sys
 import config
 from App import controller
+from DISClib.ADT import list as lt
 assert config
 
 """
@@ -53,8 +54,9 @@ def printMenu():
     print("Bienvenido")
     print("1- Inicializar Analizador")
     print("2- Cargar información de accidentes")
-    print("3- Requerimento 1")
-    print("4- Requerimento 2")
+    print("3- Busqueda de accidentes en una fecha especifica")
+    print("4- Busqueda de accidentes anteriores a una fecha")
+    print("5- Busqueda de accidententes un un rango de horas")
     print("0- Salir")
     print("*******************************************")
 
@@ -83,7 +85,7 @@ while True:
             controller.loadData(cont, accidente3)
         if year_boi==4:
             controller.loadData(cont, accidente4)
-        print('Crimenes cargados: ' + str(controller.cantidad_de_accidentes(cont)))
+        print('Accidentes cargados: ' + str(controller.cantidad_de_accidentes(cont)))
         print('Altura del arbol: ' + str(controller.altura_arbol(cont)))
         print('Elementos en el arbol: ' + str(controller.cantidad_nodos(cont)))
 
@@ -91,11 +93,21 @@ while True:
         print("\nBuscando accidentes en una fecha especifica: ")
         the_date=input("Ingrese la fecha de la que desea saber: Formato YYYY-MM-DD\n")
         final=controller.accidentes_por_fechas(cont,the_date)
-        print(f"Total de crimenes encontrados:{final}")
+        print(f"Total de accidentes encontrados:{final[1]}\n{final[0]}")
 
     elif int(inputs[0]) == 4:
-        print("\nRequerimiento No 1 del reto 3: ")
+        print("\nBuscando accidentes anteriores a una fecha especifica: ")
+        the_date=input("Ingrese la fecha de la que desea saber: Formato YYYY-MM-DD\n")
+        final=controller.accidentes_por_fechas_anteriores(cont,the_date)
+        print(f"Total de accidentes encontrados:{final[0]}\nFecha con mas accidentes:{final[1]} con un total de {final[2]} accidentes")
 
+    elif int(inputs[0]) == 5:
+        print("\nBuscando accidentes en una hora especifica: ")
+        the_date=input("Ingrese la hora inicial: Formato HH:MM:SS\n")
+        the_date2=input("Ingrese la hora final: Formato HH:MM:SS\n")
+        final=controller.accidentes_por_horas(cont,the_date,the_date2)
+        print(f"Total de accidentes encontrados:{final[1]}\nEl porcentaje de accidentes reportados entre las {the_date} y las {the_date2} es de {round(((final[1]*100)/controller.cantidad_de_accidentes(cont)),1)}%")
     else:
         sys.exit(0)
 sys.exit(0)
+
