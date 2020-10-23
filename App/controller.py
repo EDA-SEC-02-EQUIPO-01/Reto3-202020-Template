@@ -78,6 +78,18 @@ def cantidad_nodos(tree):
     return model.num_nodos(tree)
 
 def accidentes_por_fechas(analyzer, initialDate):
+    
     initialDate = datetime.datetime.strptime(initialDate, '%Y-%m-%d')
     return model.busqueda_por_fechas(analyzer, initialDate.date())
                                   
+def accidentes_por_fechas_anteriores(analyzer, FinalDate):
+    
+    FinalDate = datetime.datetime.strptime(FinalDate, '%Y-%m-%d')
+    return model.busqueda_por_fechas_anteriores(analyzer, FinalDate.date())
+
+def accidentes_por_horas(analyzer,initialDate, FinalDate):
+    initialDate = datetime.datetime.strptime(initialDate, '%H:%M:%S')
+    FinalDate = datetime.datetime.strptime(FinalDate, '%H:%M:%S')
+    return model.accidentes_por_horas(analyzer, initialDate.time(),FinalDate.time())
+
+
