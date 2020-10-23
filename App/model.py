@@ -40,15 +40,21 @@ es decir contiene los modelos con los datos en memoria
 # -----------------------------------------------------
 def analizador_nuevo():
     adt_analizador={"accidentes":None,
-                    "fechas_accidente":None
+                    "fechas_accidente":None,
+                    "horas_accidentes":None
                     }
     adt_analizador["accidentes"]=lt.newList()
-    adt_analizador["fechas_accidente"]=om.newMap(comparefunction=compareDates)
+    adt_analizador["fechas_accidente"]=om.newMap(omaptype="RBT",comparefunction=compareDates)
+    adt_analizador["horas_accidentes"]=om.newMap(omaptype="RBT",comparefunction=compareDates)
+
     return adt_analizador
+
 # Funciones para agregar informacion al catalogo
+
 def agregar_accidente(analizador,accidente):
     lt.addLast(analizador["accidentes"],accidente)
     actualizar_fechas(analizador["fechas_accidente"],accidente)
+    agregar_hora_de_accidentes(analizador["horas_accidentes"],accidente)
     return analizador
 
 def actualizar_fechas(map,accidente):
@@ -65,10 +71,12 @@ def actualizar_fechas(map,accidente):
 
 
 def agregar_fecha_del_accidente(entrada,accidente):
-    lista=entrada["lista_de_accidentes"]
-    lt.addLast(lista,accidente)
-    severidad=entrada["severidad_del_accidente"]
+    severidad=entrada["fecha_del_accidente"]
+    tiempo_accidente = accidente["Start_Time"]
+    entrada["Date"]=datetime.datetime.strptime(tiempo_accidente, '%Y-%m-%d %H:%M:%S')
     severidadconf=m.get(severidad,accidente["Severity"])
+    if accidente["Severity"] not in entrada["severidades_reportadas"]:
+        entrada["severidades_reportadas"].append(accidente["Severity"])
     if severidadconf is None:
         entry=nueva_fecha(accidente["Severity"])
         lt.addLast(entry["lista_de_accidentes"],accidente)
@@ -78,14 +86,57 @@ def agregar_fecha_del_accidente(entrada,accidente):
         lt.addLast(entry["lista_de_accidentes"], accidente)
     return entrada
 
-def newDataEntry(crime):
-    entry = {"severidad_del_accidente": None, 
-             "lista_de_accidentes": None}
+
+def agregar_hora_de_accidentes(map, accidente):
+    tiempo_accidente = accidente["Start_Time"]
+    fecha_accidente = datetime.datetime.strptime(tiempo_accidente, '%Y-%m-%d %H:%M:%S')
+    entry = om.get(map, fecha_accidente.time())
+    if entry is None:
+        datentry = newHourEntry(accidente)
+        om.put(map, fecha_accidente.time(), datentry)
+    else:
+        datentry = me.getValue(entry)
+    configurar_hora_del_accidente(datentry, accidente)
+    return map
+
+def configurar_hora_del_accidente(entrada,accidente):
+    severidad=entrada["hora_del_accidente"]
+    tiempo_accidente = accidente["Start_Time"]
+    entrada["Date"]=datetime.datetime.strptime(tiempo_accidente, '%Y-%m-%d %H:%M:%S')
+    severidadconf=m.get(severidad,accidente["Severity"])
+    if accidente["Severity"] not in entrada["severidades_reportadas"]:
+        entrada["severidades_reportadas"].append(accidente["Severity"])
+    if severidadconf is None:
+        entry=nueva_fecha(accidente["Severity"])
+        lt.addLast(entry["lista_de_accidentes"],accidente)
+        m.put(severidad,accidente["Severity"],entry)
+    else:
+        entry = me.getValue(severidadconf)
+        lt.addLast(entry["lista_de_accidentes"], accidente)
+    return entrada
+
+
+def newHourEntry(crime):
+    entry = {"hora_del_accidente": None,
+             "severidades_reportadas":None,
+             "Date":None}
     
-    entry["severidad_del_accidente"] = m.newMap(numelements=30,
+    entry["hora_del_accidente"] = m.newMap(numelements=30,
                                      maptype='PROBING',
                                      comparefunction=compareSeverity)
-    entry["lista_de_accidentes"] = lt.newList()
+    entry["severidades_reportadas"]=[]
+    return entry
+
+
+def newDataEntry(crime):
+    entry = {"fecha_del_accidente": None,
+             "severidades_reportadas":None,
+             "Date":None}
+    
+    entry["fecha_del_accidente"] = m.newMap(numelements=30,
+                                     maptype='PROBING',
+                                     comparefunction=compareSeverity)
+    entry["severidades_reportadas"]=[]
     return entry
 
 def nueva_fecha(severidad):    
@@ -113,14 +164,70 @@ def num_nodos(analyzer):
     """
     return om.size(analyzer["fechas_accidente"])
 
+def estructura_criminal(lista):
+    estr_crimenes={"Severidad de los crimenes":None,
+                   "Cantidad de crimenes":0}
+    estr_crimenes["Severidad de los crimenes"]=lista["severidad_del_accidente"]
+    estr_crimenes["Cantidad de crimenes"]+=lt.size(lista["lista_de_accidentes"])
+    return estr_crimenes
+
 def busqueda_por_fechas(analyzer,initialDate):
     lst = om.values(analyzer["fechas_accidente"], initialDate,initialDate)
     lstiterator = it.newIterator(lst)
+    crimenes_por_severidad=[]
     totcrimes = 0
+    total=0
     while (it.hasNext(lstiterator)):
         lstdate = it.next(lstiterator)
-        totcrimes += lt.size(lstdate["lista_de_accidentes"])
-    return totcrimes
+        the_map=lstdate["fecha_del_accidente"]
+        for g in lstdate["severidades_reportadas"]:
+            totcrimes = m.get(the_map,g)
+            totcrimes = me.getValue(totcrimes)
+            estr_crimenes=estructura_criminal(totcrimes)
+            crimenes_por_severidad.append(estr_crimenes)
+            total+=lt.size(totcrimes["lista_de_accidentes"])
+    return (crimenes_por_severidad,total)
+
+def busqueda_por_fechas_anteriores(analyzer,initialDate):
+    min_valor=om.minKey(analyzer["fechas_accidente"])
+    lst = om.values(analyzer["fechas_accidente"], min_valor,initialDate)
+    lstiterator = it.newIterator(lst)
+    totcrimes = lt.newList()
+    llave_mayor=0
+    comprobante1=0
+    fecha=0
+    while (it.hasNext(lstiterator)):
+        lstdate = it.next(lstiterator)
+        the_map= lstdate["fecha_del_accidente"]
+        comprobante2=0
+        for g in lstdate["severidades_reportadas"]:
+            totcrimes = m.get(the_map,g)
+            totcrimes = me.getValue(totcrimes)
+            llave_mayor+=lt.size(totcrimes["lista_de_accidentes"])
+            comprobante2+=lt.size(totcrimes["lista_de_accidentes"])
+        if comprobante1<comprobante2:
+            comprobante1=comprobante2
+            fecha=lstdate["Date"]
+        
+    return (llave_mayor,str(fecha.date()),comprobante1)
+
+def accidentes_por_horas(analyzer,initialDate, FinalDate):
+    lst = om.values(analyzer["horas_accidentes"], initialDate,FinalDate)
+    lstiterator = it.newIterator(lst)
+    crimenes_por_severidad=[]
+    totcrimes = 0
+    total=0
+    while (it.hasNext(lstiterator)):
+        lstdate = it.next(lstiterator)
+        the_map=lstdate["hora_del_accidente"]
+        for g in lstdate["severidades_reportadas"]:
+            totcrimes = m.get(the_map,g)
+            totcrimes = me.getValue(totcrimes)
+            estr_crimenes=estructura_criminal(totcrimes)
+            crimenes_por_severidad.append(estr_crimenes)
+            total+=lt.size(totcrimes["lista_de_accidentes"])
+    return (crimenes_por_severidad,total)
+
 
 
 # ==============================
