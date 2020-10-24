@@ -91,5 +91,15 @@ def accidentes_por_horas(analyzer,initialDate, FinalDate):
     initialDate = datetime.datetime.strptime(initialDate, '%H:%M:%S')
     FinalDate = datetime.datetime.strptime(FinalDate, '%H:%M:%S')
     return model.accidentes_por_horas(analyzer, initialDate.time(),FinalDate.time())
+  
+def accidentes_en_rango(analyzer, initialDate, finalDate):
+    initialDate = datetime.datetime.strptime(initialDate, '%Y-%m-%d')
+    finalDate = datetime.datetime.strptime(finalDate, '%Y-%m-%d')
+    return model.accidentes_en_un_rango(analyzer, initialDate.date(), finalDate.date())
+
+def estados_en_rango(analyzer, initialDate, finalDate):
+    initialDate = datetime.datetime.strptime(initialDate, '%Y-%m-%d')
+    finalDate = datetime.datetime.strptime(finalDate, '%Y-%m-%d')
+    return model.estados_en_un_rango(analyzer, initialDate.date(), finalDate.date())
 
 
