@@ -57,6 +57,8 @@ def printMenu():
     print("3- Busqueda de accidentes en una fecha especifica")
     print("4- Busqueda de accidentes anteriores a una fecha")
     print("5- Busqueda de accidententes un un rango de horas")
+    print("6- Busqueda de accidententes por categoria")
+    print("7- Busqueda de accidententes por estado")
     print("0- Salir")
     print("*******************************************")
 
@@ -107,6 +109,22 @@ while True:
         the_date2=input("Ingrese la hora final: Formato HH:MM:SS\n")
         final=controller.accidentes_por_horas(cont,the_date,the_date2)
         print(f"Total de accidentes encontrados:{final[1]}\nEl porcentaje de accidentes reportados entre las {the_date} y las {the_date2} es de {round(((final[1]*100)/controller.cantidad_de_accidentes(cont)),1)}%\nCantidad de crimenes reportados por su severidad: {final[0]}")
+        
+    elif int(inputs[0]) == 6:
+        print("\nBuscando accidentes en un rango: ")
+        inicial=input("Ingrese la fecha inicial: Formato YYYY-MM-DD\n")
+        final=input("Ingrese la fecha final: Formato YYYY-MM-DD\n")
+        total=controller.accidentes_en_rango(cont,inicial,final)
+        print(f"Total de accidentes encontrados: {total[0]}")
+        print(f"Categoría de accidentes más reportada: {total[1]}")
+
+    elif int(inputs[0]) == 7:
+        print("\nBuscando estado con más accidentes en un rango: ")
+        inicial=input("Ingrese la fecha inicial: Formato YYYY-MM-DD\n")
+        final=input("Ingrese la fecha final: Formato YYYY-MM-DD\n")
+        total=controller.estados_en_rango(cont,inicial,final)
+        print(f"Fecha con más accidentes reportados: {total[0]}")
+        print(f"Estado con más accidentes reportados: {total[1]}")
     else:
         sys.exit(0)
 sys.exit(0)
