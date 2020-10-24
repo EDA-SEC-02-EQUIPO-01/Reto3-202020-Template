@@ -72,9 +72,11 @@ def actualizar_fechas(map,accidente):
 
 def agregar_fecha_del_accidente(entrada,accidente):
     severidad=entrada["fecha_del_accidente"]
+    estado=entrada["estado_del_accidente"]
     tiempo_accidente = accidente["Start_Time"]
     entrada["Date"]=datetime.datetime.strptime(tiempo_accidente, '%Y-%m-%d %H:%M:%S')
     severidadconf=m.get(severidad,accidente["Severity"])
+    estadoconf=m.get(estado,accidente["State"])
     if accidente["Severity"] not in entrada["severidades_reportadas"]:
         entrada["severidades_reportadas"].append(accidente["Severity"])
     if severidadconf is None:
@@ -84,6 +86,14 @@ def agregar_fecha_del_accidente(entrada,accidente):
     else:
         entry = me.getValue(severidadconf)
         lt.addLast(entry["lista_de_accidentes"], accidente)
+    if estadoconf is None:
+        entry=nueva_es(accidente["State"])
+        lt.addLast(entry["lista_de_accidentes"],accidente)
+        m.put(estado,accidente["State"],entry)
+    else:
+        entry = me.getValue(estadoconf)
+        lt.addLast(entry["lista_de_accidentes"], accidente)
+
     return entrada
 
 
@@ -130,11 +140,15 @@ def newHourEntry(crime):
 
 def newDataEntry(crime):
     entry = {"fecha_del_accidente": None,
+             "estado_del_accidente":None,
              "severidades_reportadas":None,
              "Date":None}
     
     entry["fecha_del_accidente"] = m.newMap(numelements=30,
                                      maptype='PROBING',
+                                     comparefunction=compareSeverity)
+    entry["estado_del_accidente"] = m.newMap(numelements=30,
+                                    maptype='PROBING',
                                      comparefunction=compareSeverity)
     entry["severidades_reportadas"]=[]
     return entry
@@ -146,6 +160,16 @@ def nueva_fecha(severidad):
     entry["severidad_del_accidente"]=severidad
     entry["lista_de_accidentes"]=lt.newList()
     return entry
+  
+def nueva_es(severidad):    
+    entry={"estado_del_accidente":None,
+           "lista_de_accidentes":None
+           }
+    entry["estado_del_accidente"]=severidad
+    entry["lista_de_accidentes"]=lt.newList()
+    return entry
+   
+ 
 # ==============================
 # Funciones de consulta
 # ==============================
@@ -233,7 +257,61 @@ def accidentes_por_horas(analyzer,initialDate, FinalDate):
             total+=lt.size(totcrimes["lista_de_accidentes"])
     return (dict_severos,total)
 
+def accidentes_en_un_rango(analyzer, initialDate, finalDate):
+    lst = om.values(analyzer["fechas_accidente"], initialDate, finalDate)
+    lstiterator = it.newIterator(lst)
+    severidades={}
+    total = 0
+    while (it.hasNext(lstiterator)):
+        lstdate = it.next(lstiterator)
+        tabla=lstdate["fecha_del_accidente"]
+        keys= pr.keySet(tabla)
+        itera=it.newIterator(keys)
+        while (it.hasNext(itera)):
+            lstk = it.next(itera)
+            parej=m.get(tabla,lstk)
+            valu=me.getValue(parej)
+            size=lt.size(valu["lista_de_accidentes"])
+            if lstk in severidades:
+                severidades[lstk] += size
+            else:
+                severidades[lstk] = size
+            total += size
+    sever=mayor_valor(severidades)
+    return (total,sever)
 
+def estados_en_un_rango(analyzer, initialDate, finalDate):
+    lst = om.keys(analyzer["fechas_accidente"], initialDate, finalDate)
+    lstiterator = it.newIterator(lst)
+    estados={}
+    fecha = ""
+    mayor= 0
+    while (it.hasNext(lstiterator)):
+        lstdate = it.next(lstiterator)
+        acc = om.get(analyzer["fechas_accidente"],lstdate)
+        lda = me.getValue(acc)
+        size_total = 0
+        keys=m.keySet(lda["estado_del_accidente"])
+        itera =it.newIterator(keys)
+        while (it.hasNext(itera)):
+            lstk = it.next(itera)
+            parej=m.get(lda["estado_del_accidente"],lstk)
+            valu=me.getValue(parej)
+            size=lt.size(valu["lista_de_accidentes"])
+            size_total+= size
+            if lstk in estados:
+                estados[lstk] += size
+            else:
+                estados[lstk] = size
+        if size_total > mayor:
+            fecha= lstdate
+            mayor= size_total
+    estad=mayor_valor(estados)
+    return (fecha,estad)
+
+def mayor_valor(dict):
+    ordenar=sorted(dict.items(),key=lambda x:x[1], reverse=True)
+    return ordenar[0][0]
 
 # ==============================
 # Funciones de Comparacion
