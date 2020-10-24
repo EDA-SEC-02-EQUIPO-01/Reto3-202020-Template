@@ -106,7 +106,7 @@ while True:
         the_date=input("Ingrese la hora inicial: Formato HH:MM:SS\n")
         the_date2=input("Ingrese la hora final: Formato HH:MM:SS\n")
         final=controller.accidentes_por_horas(cont,the_date,the_date2)
-        print(f"Total de accidentes encontrados:{final[1]}\nEl porcentaje de accidentes reportados entre las {the_date} y las {the_date2} es de {round(((final[1]*100)/controller.cantidad_de_accidentes(cont)),1)}%")
+        print(f"Total de accidentes encontrados:{final[1]}\nEl porcentaje de accidentes reportados entre las {the_date} y las {the_date2} es de {round(((final[1]*100)/controller.cantidad_de_accidentes(cont)),1)}%\nCantidad de crimenes reportados por su severidad: {final[0]}")
     else:
         sys.exit(0)
 sys.exit(0)
