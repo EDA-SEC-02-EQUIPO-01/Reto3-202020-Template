@@ -217,16 +217,21 @@ def accidentes_por_horas(analyzer,initialDate, FinalDate):
     crimenes_por_severidad=[]
     totcrimes = 0
     total=0
+    dict_severos={}
     while (it.hasNext(lstiterator)):
         lstdate = it.next(lstiterator)
         the_map=lstdate["hora_del_accidente"]
         for g in lstdate["severidades_reportadas"]:
             totcrimes = m.get(the_map,g)
             totcrimes = me.getValue(totcrimes)
+            if totcrimes["severidad_del_accidente"] not in dict_severos:
+                dict_severos[totcrimes["severidad_del_accidente"]]=lt.size(totcrimes["lista_de_accidentes"])
+            else:
+                dict_severos[totcrimes["severidad_del_accidente"]]+=lt.size(totcrimes["lista_de_accidentes"])
             estr_crimenes=estructura_criminal(totcrimes)
             crimenes_por_severidad.append(estr_crimenes)
             total+=lt.size(totcrimes["lista_de_accidentes"])
-    return (crimenes_por_severidad,total)
+    return (dict_severos,total)
 
 
 
